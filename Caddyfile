@@ -1,0 +1,14 @@
+* {
+
+  # Proxy all the thing to the app stack
+  proxy / http://stack {
+    transparent
+    try_duration 10s
+  }
+
+  # On-demand TLS
+  tls {
+    max_certs 100
+  }
+
+}

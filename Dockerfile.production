@@ -1,0 +1,44 @@
+FROM golang:1.11-stretch AS stack-builder
+
+ARG STACK_GIT_REPO=github.com/stack/stack
+ARG STACK_GIT_BRANCH=master
+ARG STACK_BUILD_MODE=production
+
+RUN set -eux && \
+    apt-get update && \
+    apt-get install -y git
+RUN git clone --depth=1 --branch $STACK_GIT_BRANCH -c advice.detachedHead=false https://$STACK_GIT_REPO ./src/$STACK_GIT_REPO/ && \
+    go get -u -v -ldflags "-X $STACK_GIT_REPO/pkg/config.BuildMode=$STACK_BUILD_MODE \
+                          -X $STACK_GIT_REPO/pkg/config.Version=$STACK_GIT_BRANCH \
+                          -X $STACK_GIT_REPO/pkg/config.BuildTime=$(date '+%Y%m%d%H%M%S')" \
+                          ./src/$STACK_GIT_REPO/
+
+
+
+FROM node:10-stretch-slim
+
+ENV COUCHDB_PROTOCOL=http \
+    COUCHDB_HOST=couchdb \
+    COUCHDB_PORT=5984 \
+    COUCHDB_USER=couch \
+    COUCHDB_PASSWORD=couch
+
+COPY --from=stack-builder /go/bin/* /usr/local/bin/
+COPY ./*.sh /usr/local/bin/
+COPY ./config.yaml /etc/stack/
+
+RUN set -eux && \
+    apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y ca-certificates curl gosu git && \
+    gosu nobody true && \
+    apt-get clean && \
+    rm -rf /tmp/* /var/tmp && \
+    chmod +x /usr/local/bin/*
+
+WORKDIR /var/lib/stack
+
+EXPOSE 8080
+
+ENTRYPOINT ["docker-entrypoint-production.sh"]
+CMD ["stack","serve"]
