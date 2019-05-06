@@ -1,5 +1,3 @@
 # Docker template
 
-This was a candidate official image for Cozy's stack. Finally it'll live directly in https://github.com/cozy/cozy-stack/tree/master/scripts so Docker Hub build is automatically triggered on tag.
-
-This repository is kept mostly as a template for personal reference later on.
+Docker template for further reference, with production VS development, wait-for-it, entrypoint script, stepping down from root to applicative user via gosu, docker-compose.yml with Caddy Server for reverse proxying with on-demand certificates...
